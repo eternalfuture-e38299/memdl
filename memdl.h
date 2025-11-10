@@ -61,6 +61,7 @@ extern "C" {
 typedef void* memdl_handle_t;
 
 // 核心API
+memdl_handle_t memdl_open_file(const char* filename, int flags);
 memdl_handle_t memdl_open(const void* so_data, size_t so_size, int flags);
 void* memdl_sym(memdl_handle_t handle, const char* symbol);
 int memdl_close(memdl_handle_t handle);

@@ -111,7 +111,7 @@ int memdl_get_platform(void) {
 }
 
 // 验证ELF/Mach-O/PE头
-int memdl_validate(const void *so_data, size_t so_size) {
+int memdl_validate(const void *so_data, const size_t so_size) {
     if (!so_data || so_size < 4) {
         memdl_set_error("Invalid data or size");
         return -1;
@@ -175,6 +175,10 @@ int memdl_get_arch(const void *so_data, const size_t so_size) {
 #ifdef MEMDL_WINDOWS
 
 #include <stdio.h>
+
+memdl_handle_t memdl_open_file(const char *filename, const int flags) {
+    return LoadLibraryA(filename);
+}
 
 memdl_handle_t memdl_open(const void *so_data, size_t so_size, int flags) {
     if (memdl_validate(so_data, so_size) != 0) {
@@ -250,6 +254,12 @@ static bool is_android_7_plus() {
         return false;
     }
     return atoi(version) >= 24; // Android 7.0 = API 24
+}
+
+memdl_handle_t memdl_open_file(const char *filename, const int flags) {
+    int dl_flags = (flags & MEMDL_NOW) ? RTLD_NOW : RTLD_LAZY;
+    dl_flags |= (flags & MEMDL_LOCAL) ? RTLD_LOCAL : RTLD_GLOBAL;
+    return dlopen(filename, dl_flags);
 }
 
 memdl_handle_t memdl_open(const void *so_data, size_t so_size, int flags) {
@@ -336,6 +346,12 @@ int memdl_close(memdl_handle_t handle) {
 
 #elif defined(MEMDL_IOS) || defined(MEMDL_MACOS)
 
+memdl_handle_t memdl_open_file(const char *filename, const int flags) {
+    int dl_flags = (flags & MEMDL_NOW) ? RTLD_NOW : RTLD_LAZY;
+    dl_flags |= (flags & MEMDL_LOCAL) ? RTLD_LOCAL : RTLD_GLOBAL;
+    return dlopen(filename, dl_flags);
+}
+
 memdl_handle_t memdl_open(const void *so_data, size_t so_size, int flags) {
     if (memdl_validate(so_data, so_size) != 0) {
         return NULL;
@@ -392,7 +408,13 @@ int memdl_close(memdl_handle_t handle) {
 
 #elif defined(MEMDL_LINUX)
 
-memdl_handle_t memdl_open(const void *so_data, size_t so_size, int flags) {
+memdl_handle_t memdl_open_file(const char *filename, const int flags) {
+    int dl_flags = (flags & MEMDL_NOW) ? RTLD_NOW : RTLD_LAZY;
+    dl_flags |= (flags & MEMDL_LOCAL) ? RTLD_LOCAL : RTLD_GLOBAL;
+    return dlopen(filename, dl_flags);
+}
+
+memdl_handle_t memdl_open(const void *so_data, const size_t so_size, const int flags) {
     if (memdl_validate(so_data, so_size) != 0) {
         return NULL;
     }
